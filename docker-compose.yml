@@ -1,0 +1,15 @@
+services:
+  nerva-db:
+    image: postgres:16-alpine
+    container_name: nerva_db_container
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=nerva_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
