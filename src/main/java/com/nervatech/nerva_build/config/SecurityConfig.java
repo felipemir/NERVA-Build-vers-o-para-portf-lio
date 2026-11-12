@@ -23,7 +23,7 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            @Value("${app.onboarding.public-enabled:true}") boolean publicOnboardingEnabled
+            @Value("${app.onboarding.public-enabled:false}") boolean publicOnboardingEnabled
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.publicOnboardingEnabled = publicOnboardingEnabled;

@@ -5,6 +5,8 @@ import com.nervatech.nerva_build.dto.ApiFieldErrorDTO;
 import com.nervatech.nerva_build.exception.ApiValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -20,6 +22,8 @@ import java.util.List;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponseDTO> handleValidation(
@@ -81,6 +85,7 @@ public class ApiExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        LOGGER.error("Erro inesperado em {} {}", request.getMethod(), request.getRequestURI(), ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno inesperado", request, List.of());
     }
 
