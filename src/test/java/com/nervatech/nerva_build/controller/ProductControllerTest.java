@@ -1,6 +1,7 @@
 package com.nervatech.nerva_build.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nervatech.nerva_build.PostgresIntegrationTest;
 import com.nervatech.nerva_build.domain.model.AppUser;
 import com.nervatech.nerva_build.domain.model.Category;
 import com.nervatech.nerva_build.domain.model.Product;
@@ -36,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("Product Controller Tests")
-class ProductControllerTest {
+class ProductControllerTest extends PostgresIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

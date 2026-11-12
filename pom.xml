@@ -12,7 +12,7 @@
 	<artifactId>nerva_build</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>nerva-build</name>
-	<description>E-commerce de Material de ConstruÃƒÂ§ÃƒÂ£o</description>
+	<description>Backend multi-loja para o comércio de materiais de construção</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -111,6 +111,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

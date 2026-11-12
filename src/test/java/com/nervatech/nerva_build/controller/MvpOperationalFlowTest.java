@@ -1,6 +1,7 @@
 package com.nervatech.nerva_build.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nervatech.nerva_build.PostgresIntegrationTest;
 import com.nervatech.nerva_build.domain.model.AppUser;
 import com.nervatech.nerva_build.domain.model.CustomerAccount;
 import com.nervatech.nerva_build.domain.model.Order;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("MVP Operational Flow Tests")
-class MvpOperationalFlowTest {
+class MvpOperationalFlowTest extends PostgresIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -158,6 +161,101 @@ class MvpOperationalFlowTest {
         mockMvc.perform(get("/api/customer-orders/{id}", otherOrder.getId())
                         .with(user(buyer)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Demo owner should authenticate with the BCrypt migration")
+    void demoOwner_shouldAuthenticateWithHashedPassword() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "owner+1@nervabuild.local",
+                                "password", "123456",
+                                "storeId", 1
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tokenType", is("Bearer")))
+                .andExpect(jsonPath("$.role", is("STORE_OWNER")));
+    }
+
+    @Test
+    @DisplayName("Public order should preserve account data and snapshot the product unit")
+    void publicOrder_shouldPreserveAccountAndProductUnit() throws Exception {
+        product.setMinimumOrderQuantity(BigDecimal.valueOf(2));
+        productRepository.saveAndFlush(product);
+
+        mockMvc.perform(post("/api/public/orders")
+                        .with(user(buyer))
+                        .header("X-Public-Store", store.getSubdomain())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(publicOrderPayload(
+                                buyer.getUsername(),
+                                buyer.getDocument(),
+                                2
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.items[0].quantity", is(2)));
+
+        Order createdOrder = orderRepository
+                .findByCustomerAccountIdOrderByCreatedAtDescIdDesc(buyer.getId())
+                .getFirst();
+        assertThat(createdOrder.getItems().getFirst().getUnitMeasure()).isEqualTo("SC");
+
+        CustomerAccount accountAfterOrder = customerAccountRepository.findById(buyer.getId()).orElseThrow();
+        assertThat(accountAfterOrder.getName()).isEqualTo("Buyer");
+        assertThat(accountAfterOrder.getPhone()).isEqualTo("11999999999");
+        assertThat(accountAfterOrder.getEmail()).isEqualTo(buyer.getUsername());
+    }
+
+    @Test
+    @DisplayName("Public order should enforce minimum quantity and authenticated identity")
+    void publicOrder_shouldEnforceMinimumQuantityAndIdentity() throws Exception {
+        product.setMinimumOrderQuantity(BigDecimal.valueOf(3));
+        productRepository.saveAndFlush(product);
+
+        mockMvc.perform(post("/api/public/orders")
+                        .with(user(buyer))
+                        .header("X-Public-Store", store.getSubdomain())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(publicOrderPayload(
+                                buyer.getUsername(),
+                                buyer.getDocument(),
+                                2
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field", is("items[0].quantity")));
+
+        mockMvc.perform(post("/api/public/orders")
+                        .with(user(buyer))
+                        .header("X-Public-Store", store.getSubdomain())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(publicOrderPayload(
+                                "outra-conta@example.com",
+                                buyer.getDocument(),
+                                3
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field", is("buyer.email")));
+    }
+
+    private Map<String, Object> publicOrderPayload(String email, String document, int quantity) {
+        return Map.of(
+                "buyer", Map.ofEntries(
+                        Map.entry("name", "Nome informado no pedido"),
+                        Map.entry("document", document),
+                        Map.entry("email", email),
+                        Map.entry("phone", "11888888888"),
+                        Map.entry("personType", "PF"),
+                        Map.entry("zipCode", "01001000"),
+                        Map.entry("street", "Rua Teste"),
+                        Map.entry("number", "123"),
+                        Map.entry("neighborhood", "Centro"),
+                        Map.entry("city", "Sao Paulo"),
+                        Map.entry("state", "SP")
+                ),
+                "items", List.of(Map.of("productId", product.getId(), "quantity", quantity)),
+                "notes", "Pedido de teste"
+        );
     }
 
     private Store createStore(String name, String subdomain) {
