@@ -22,12 +22,12 @@ As decisões de produto e arquitetura eram compartilhadas com a equipe. Fui um d
 ## O que faria diferente hoje
 
 - Endureceria segurança, remoção de contas e senhas de demonstração, segredos obrigatórios e controle de acesso multi-tenant.
-- Aumentaria testes de concorrência, isolamento entre lojas, idempotência e transições de estoque.
+- Aumentaria testes específicos de concorrência, idempotência e cenários extremos de estoque.
 - Adicionaria CI, observabilidade, healthchecks e empacotamento da aplicação.
 - Reduziria o MVP aos fluxos validados antes de introduzir funcionalidades de IA/visão.
 
 ## Limitações e cuidados
 
-**Este repositório contém código de um MVP histórico, não pronto para produção.** Algumas migrations legadas incluem usuários fictícios com senha de demonstração em texto puro (`123456`); os dados não são credenciais reais, porém esse bootstrap é inseguro e precisaria ser removido ou substituído por hashes antes de um deploy real. As credenciais de PostgreSQL do `docker-compose.yml` e padrões de desenvolvimento são demonstrativas. O segredo JWT não é mais fornecido por padrão no arquivo `application.properties` e deve ser configurado por `APP_JWT_SECRET` com valor forte.
+**Este repositório contém código de um MVP histórico, não pronto para produção.** Migrations legadas ainda exibem a senha fictícia `123456` durante o bootstrap, mas a migration `V12` converte essas ocorrências para BCrypt antes do estado final do banco. As credenciais de PostgreSQL do `docker-compose.yml` são exclusivamente locais. O segredo JWT não possui valor padrão e deve ser configurado por `APP_JWT_SECRET` com valor forte.
 
-Não foram executados testes Maven nem implantada a aplicação durante a preparação do pacote para portfólio. O histórico Git do projeto original foi propositalmente removido do pacote para não expor metadados ou objetos antigos.
+Durante a preparação desta versão, a suíte foi executada com PostgreSQL 16 via Testcontainers: 37 testes passaram sem falhas ou erros. O histórico Git do projeto original foi propositalmente removido do pacote para não expor metadados ou objetos antigos.

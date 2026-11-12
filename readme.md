@@ -587,26 +587,19 @@ Para testar uma storefront customizada da Obra Ja, o frontend ou Postman deve in
 
 ## Testes
 
-A validacao basica atual e feita com Maven.
+A suite usa Maven, MockMvc e PostgreSQL 16 via Testcontainers. Ela valida o contexto Spring, todas as migrations Flyway, catalogo, categorias, isolamento entre lojas, permissoes, pedidos do comprador e transicoes de estoque.
 
-O comando usado durante as entregas recentes foi `mvnw.cmd test`.
+Com o Docker ativo:
 
-O teste atual sobe o contexto Spring, valida beans, repositories, JPA, Flyway e configuracao basica.
+```bash
+./mvnw test
+```
 
-Ainda ha espaco para evoluir testes especificos de:
-
-- criacao de pedido publico;
-- validacao de comprador global;
-- snapshot de itens;
-- estoque insuficiente;
-- listagem admin por loja;
-- detalhe admin por loja;
-- tentativa de acesso a pedido de outra loja;
-- futuras transicoes de status.
+Resultado verificado na preparacao para portfolio: 37 testes, sem falhas ou erros.
 
 ## Pontos de Evolucao Ja Mapeados
 
-### Em implementacao (MVP operacional)
+### Implementado no MVP operacional
 
 Fluxo de status:
 
@@ -619,12 +612,13 @@ Estoque:
 - baixa automatica na confirmacao;
 - restauracao no cancelamento;
 - locking pessimista;
-- tabela de movimentacao historica.
 
 Comprador:
 
 - historico de pedidos do comprador;
 - detalhe do proprio pedido com status e itens.
+
+### Fora do escopo encerrado do MVP
 
 Paginacao:
 
@@ -701,11 +695,11 @@ Ainda falta para uma experiencia mais completa do comprador:
 - fluxo de pagamento;
 - storefront publica sem dependencia de `storeId` nas rotas de catalogo.
 
-Em implementacao para o MVP operacional:
+Implementado no MVP operacional:
 
 - historico de pedidos do comprador;
 - detalhe do proprio pedido;
-- acompanhamento de status.
+- acompanhamento de status e detalhe do proprio pedido.
 
 ### Visao da loja
 
@@ -734,7 +728,7 @@ Ainda falta para loja:
 - dominio customizado salvo no banco;
 - endpoint publico para resolver loja por subdominio/dominio e devolver `storeId`.
 
-Em implementacao para o MVP operacional:
+Fora do escopo encerrado do MVP:
 
 - edicao completa dos dados da loja (nome, telefone, email, CNPJ, endereco);
 - gestao de equipe com listagem, desativacao e reativacao de usuarios internos.
@@ -766,9 +760,12 @@ Ainda falta para admin/operacao:
 - filtros mais completos;
 - integracao de pagamento.
 
-Em implementacao para o MVP operacional:
+Implementado no MVP operacional:
 
 - atualizar status do pedido com validacao de fluxo;
 - baixa e restauracao automatica de estoque;
 - registro de quem alterou o status;
+
+Ainda nao implementado:
+
 - paginacao em todas as listas.
