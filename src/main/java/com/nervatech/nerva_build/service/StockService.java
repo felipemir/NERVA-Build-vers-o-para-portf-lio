@@ -55,6 +55,15 @@ public class StockService {
         }
 
         BigDecimal requested = BigDecimal.valueOf(requestedQuantity);
+        BigDecimal minimumOrderQuantity = product.getMinimumOrderQuantity();
+        if (minimumOrderQuantity != null && requested.compareTo(minimumOrderQuantity) < 0) {
+            throw new ApiValidationException("Erro de validacao", List.of(new ApiFieldErrorDTO(
+                    fieldName,
+                    "Quantidade minima para o produto " + product.getName() + ": "
+                            + minimumOrderQuantity.stripTrailingZeros().toPlainString()
+            )));
+        }
+
         if (availableQuantity.compareTo(requested) < 0) {
             throw new ApiValidationException("Erro de validacao", List.of(new ApiFieldErrorDTO(
                     fieldName,

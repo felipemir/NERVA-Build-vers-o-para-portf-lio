@@ -30,6 +30,14 @@ public class CustomerAccountIdentificationService {
 
     @Transactional
     public CustomerAccount identifyOrCreate(PublicOrderBuyerRequestDTO buyer, CustomerAccountDetails currentCustomer) {
+        if (currentCustomer != null) {
+            return customerAccountRepository.findByIdAndActiveTrue(currentCustomer.getId())
+                    .orElseThrow(() -> new ApiValidationException("Erro de validacao", List.of(new ApiFieldErrorDTO(
+                            "buyer",
+                            "Comprador autenticado invalido"
+                    ))));
+        }
+
         String email = normalizeEmail(firstNonBlank(buyer.email(), currentCustomer == null ? null : currentCustomer.getUsername()));
         String phone = firstNonBlank(buyer.phone(), currentCustomer == null ? null : currentCustomer.getPhone());
         String document = normalizeDocument(firstNonBlank(buyer.document(), currentCustomer == null ? null : currentCustomer.getDocument()));

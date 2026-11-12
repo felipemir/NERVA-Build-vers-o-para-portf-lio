@@ -102,7 +102,7 @@ public class PublicOrderService {
             item.setSubtotal(subtotal);
             item.setSkuSnapshot(product.getSku());
             item.setNameSnapshot(product.getName());
-            item.setUnitMeasure(DEFAULT_UNIT_MEASURE);
+            item.setUnitMeasure(firstNonBlank(product.getUnit(), DEFAULT_UNIT_MEASURE));
 
             order.addItem(item);
             total = total.add(subtotal);
@@ -164,7 +164,10 @@ public class PublicOrderService {
 
     private Customer findExistingCustomer(Long storeId, String document, String email) {
         if (document != null) {
-            return customerRepository.findByStoreIdAndDocument(storeId, document).orElse(null);
+            Customer customerByDocument = customerRepository.findByStoreIdAndDocument(storeId, document).orElse(null);
+            if (customerByDocument != null) {
+                return customerByDocument;
+            }
         }
 
         if (email != null) {
@@ -217,6 +220,21 @@ public class PublicOrderService {
         }
         if (phone == null) {
             fieldErrors.add(new ApiFieldErrorDTO("buyer.phone", "Celular do comprador e obrigatorio"));
+        }
+        if (currentCustomer != null && !normalizeEmail(currentCustomer.getUsername()).equals(email)) {
+            fieldErrors.add(new ApiFieldErrorDTO(
+                    "buyer.email",
+                    "Email do pedido deve corresponder ao comprador autenticado"
+            ));
+        }
+
+        String authenticatedDocument = currentCustomer == null ? null : normalizeDocument(currentCustomer.getDocument());
+        String requestDocument = normalizeDocument(buyer.document());
+        if (authenticatedDocument != null && requestDocument != null && !authenticatedDocument.equals(requestDocument)) {
+            fieldErrors.add(new ApiFieldErrorDTO(
+                    "buyer.document",
+                    "Documento do pedido deve corresponder ao comprador autenticado"
+            ));
         }
         if (trimToNull(buyer.zipCode()) == null) {
             fieldErrors.add(new ApiFieldErrorDTO("buyer.zipCode", "CEP do endereco e obrigatorio"));
@@ -324,6 +342,11 @@ public class PublicOrderService {
     private String normalizeEmail(String email) {
         String normalized = trimToNull(email);
         return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeDocument(String document) {
+        String normalized = trimToNull(document);
+        return normalized == null ? null : normalized.replaceAll("[^0-9A-Za-z]", "");
     }
 
     private String firstNonBlank(String... values) {
